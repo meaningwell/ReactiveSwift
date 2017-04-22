@@ -6,12 +6,22 @@
 //  Copyright (c) 2014 GitHub. All rights reserved.
 //
 
+import Dispatch
+
 /// An unordered, non-unique collection of values of type `Element`.
 public struct Bag<Element> {
 	/// A uniquely identifying token for removing a value that was inserted into a
 	/// Bag.
-	public final class Token {
-		fileprivate init() {}
+	public struct Token: Equatable {
+		fileprivate let timestamp: UInt64
+
+		fileprivate init(_ timestamp: UInt64) {
+			self.timestamp = timestamp
+		}
+
+		public static func ==(left: Token, right: Token) -> Bool {
+			return left.timestamp == right.timestamp
+		}
 	}
 
 	fileprivate struct ElementSlot {
@@ -20,6 +30,7 @@ public struct Bag<Element> {
 	}
 
 	fileprivate var elements: ContiguousArray<ElementSlot> = []
+	private var lastTimestamp: UInt64 = 0
 
 	public init() {}
 
@@ -30,7 +41,17 @@ public struct Bag<Element> {
 	///   - value: A value that will be inserted.
 	@discardableResult
 	public mutating func insert(_ value: Element) -> Token {
-		let token = Token()
+		var timestamp: UInt64 = 0
+
+		repeat {
+			// `DispatchTime` is expected to use monotonic clocks. That said a guard is
+			// put here just in case.
+			timestamp = DispatchTime.now().uptimeNanoseconds
+		} while timestamp <= lastTimestamp
+
+		lastTimestamp = timestamp
+
+		let token = Token(timestamp)
 		let element = ElementSlot(value: value, token: token)
 
 		elements.append(element)
@@ -44,11 +65,9 @@ public struct Bag<Element> {
 	/// - parameters:
 	///   - token: A token returned from a call to `insert()`.
 	public mutating func remove(using token: Token) {
-		let tokenIdentifier = ObjectIdentifier(token)
-
 		// Removal is more likely for recent objects than old ones.
 		for i in (elements.startIndex ..< elements.endIndex).reversed() {
-			if ObjectIdentifier(elements[i].token) == tokenIdentifier {
+			if elements[i].token == token {
 				elements.remove(at: i)
 				break
 			}
