@@ -75,23 +75,17 @@ public struct Bag<Element> {
 	}
 }
 
-extension Bag: Collection {
-	public typealias Index = Array<Element>.Index
-
-	public var startIndex: Index {
+extension Bag: RandomAccessCollection {
+	public var startIndex: Int {
 		return elements.startIndex
 	}
 	
-	public var endIndex: Index {
+	public var endIndex: Int {
 		return elements.endIndex
 	}
 
-	public subscript(index: Index) -> Element {
+	public subscript(index: Int) -> Element {
 		return elements[index].value
-	}
-
-	public func index(after i: Index) -> Index {
-		return i + 1
 	}
 
 	public func makeIterator() -> Iterator {
@@ -117,7 +111,7 @@ extension Bag: Collection {
 				nextIndex = currentIndex + 1
 				return base[currentIndex].value
 			}
-			
+
 			return nil
 		}
 	}
