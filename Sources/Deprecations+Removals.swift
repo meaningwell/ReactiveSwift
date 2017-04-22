@@ -10,6 +10,9 @@ public func timer(interval: DispatchTimeInterval, on scheduler: DateScheduler) -
 public func timer(interval: DispatchTimeInterval, on scheduler: DateScheduler, leeway: DispatchTimeInterval) -> SignalProducer<Date, NoError> { fatalError() }
 
 // MARK: Obsolete types in ReactiveSwift 2.0.
+@available(*, unavailable, renamed:"Bag.Token")
+public typealias RemovalToken = Any
+
 @available(*, unavailable, message: "This protocol has been removed. Constrain `Action` directly instead.")
 public protocol ActionProtocol {}
 
@@ -207,7 +210,7 @@ extension LoggingEvent.SignalProducer {
 
 extension Bag {
 	@available(*, unavailable, renamed:"remove(using:)")
-	public func removeValueForToken(_ token: RemovalToken) { fatalError() }
+	public func removeValueForToken(_ token: Token) { fatalError() }
 }
 
 extension CompositeDisposable {
