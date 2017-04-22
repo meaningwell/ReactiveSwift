@@ -12,7 +12,7 @@ import Dispatch
 public struct Bag<Element> {
 	/// A uniquely identifying token for removing a value that was inserted into a
 	/// Bag.
-	public struct Token: Equatable {
+	public struct Token: Comparable {
 		fileprivate let timestamp: UInt64
 
 		fileprivate init(_ timestamp: UInt64) {
@@ -21,6 +21,10 @@ public struct Bag<Element> {
 
 		public static func ==(left: Token, right: Token) -> Bool {
 			return left.timestamp == right.timestamp
+		}
+
+		public static func <(left: Token, right: Token) -> Bool {
+			return left.timestamp < right.timestamp
 		}
 	}
 
@@ -65,13 +69,36 @@ public struct Bag<Element> {
 	/// - parameters:
 	///   - token: A token returned from a call to `insert()`.
 	public mutating func remove(using token: Token) {
-		// Removal is more likely for recent objects than old ones.
-		for i in (elements.startIndex ..< elements.endIndex).reversed() {
-			if elements[i].token == token {
-				elements.remove(at: i)
-				break
+		// Fast Path: 5 last inserted elements.
+		let fastPathStartIndex = elements.index(elements.endIndex,
+		                                        offsetBy: -5,
+		                                        limitedBy: elements.startIndex)
+			?? elements.startIndex
+
+		for index in (fastPathStartIndex ..< elements.endIndex).reversed() {
+			if elements[index].token == token {
+				elements.remove(at: index)
+				return
 			}
 		}
+
+		// Slow Path: Binary Search
+		var lowIndex = elements.startIndex
+		var highIndex = fastPathStartIndex - 1
+
+		repeat {
+			let midIndex = (lowIndex + highIndex) / 2
+			let midToken = elements[midIndex].token
+
+			if midToken < token {
+				lowIndex = midIndex + 1
+			} else if midToken > token {
+				highIndex = midIndex - 1
+			} else {
+				elements.remove(at: midIndex)
+				return
+			}
+		} while lowIndex <= highIndex
 	}
 }
 
