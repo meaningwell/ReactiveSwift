@@ -47,7 +47,7 @@ public struct Bag<Element> {
 		let tokenIdentifier = ObjectIdentifier(token)
 
 		// Removal is more likely for recent objects than old ones.
-		for i in elements.indices.reversed() {
+		for i in (elements.startIndex ..< elements.endIndex).reversed() {
 			if ObjectIdentifier(elements[i].token) == tokenIdentifier {
 				elements.remove(at: i)
 				break
